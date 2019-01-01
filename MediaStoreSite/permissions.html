@@ -1,0 +1,238 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <link href="css/style.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
+    <script src="common.js"></script>
+    <script src="pxloader/PxLoader.js"></script>
+    <script src="pxloader/PxLoaderData.js"></script>
+
+    <script type="text/javascript" src="jquery.lazy-master/jquery.lazy.min.js"></script>
+
+    <script type="text/javascript" src="js/URL.js"></script>
+    <script type="text/javascript" src="js/helpers.js"></script>
+    <script type="text/javascript" src="js/auth.js"></script>
+
+</head>
+<body>
+    <div id="header">
+        <div id="title">MediaStore - Permissions</div>
+        <div id="topmenu">
+            <div id="lastupdate" onclick="Search.DataRefresh()" style="cursor:pointer">...</div>
+            <div class="login-provider">
+                <div><fb:login-button scope="public_profile,email" auto-logout-link="true" onlogin="onFacebookLogin();"></fb:login-button></div>
+            </div>
+        </div>
+        <div style="position:absolute;left:10px;top:40px;display:table;">
+            <div style="display:table-cell;font-size:12px">
+                PERMISSIONS:
+            </div>
+            <div style="display:table-cell;">
+                <select id="selUsers" onchange="Permissions.Change()"></select>
+            </div>
+            <div style="display:table-cell;">
+                <button onclick="Permissions.Save()">SAVE</button>
+            </div>
+        </div>
+    </div>
+    <div id="main" style="margin-bottom:50px">
+
+        <div id="grouppanelhost" class="grouppanel" style="padding-top:10px;">
+            <div class="panel grouppanel" id="grouppanel"></div>
+        </div>
+
+        <div style="clear:both"></div>
+        <div id="footerspace" style="min-height:20px"></div>
+    </div>
+    <div id="footer">
+        2018 Luis Alves Martins.
+        <a href="">Code here</a>
+    </div>
+
+    <div id=busy class="modal" style="display:none"><span class=helper></span><img style="vertical-align:middle" src="images/loading.gif"></div>
+
+    <script>
+        var Permissions = {
+            List: [],
+            Change: function () {
+                console.log("PERMISSIONS.CHANGE:" + $("#selUsers").val())
+                for (var i = 0; i < Search.Detail.length; i++) {
+                    $("#folder" + i).removeClass("selected");
+                }
+
+                var selPermissions = -1;
+                for (var f = 0; f < Permissions.List.length; f++) {
+                    if (Permissions.List[f].email == $("#selUsers").val()) {
+                        selPermissions = f;
+                        break;
+                    }
+                }
+
+                console.log(Permissions.List[selPermissions]);
+
+                var a = Permissions.List[selPermissions].allowedTags.split(",");
+                for (var f = 0; f < a.length; f++) {
+                    var t = a[f];
+
+                    if (t == "*") {
+                        for (var i = 0; i < Search.Detail.length; i++) {
+                            $("#folder" + i).addClass("selected");
+                        }
+                    }
+                    else {
+                        var p = t.split(":");
+                        if (p[0] == "DIR") {
+                            for (var i = 0; i < Search.Detail.length; i++) {
+                                if (Search.Detail[i].group == p[1])
+                                    $("#folder" + i).addClass("selected");
+                            }
+                        }
+                    }
+                }
+            },
+            Load: function () {
+                $.get(
+                    URL.adminGetPermissions,
+                    function (data) {
+                        Permissions.List = data;
+                        var dropdown = $("#selUsers");
+                        $.each(data, function () {
+                            dropdown.append($("<option />").val(this.email).text(this.email));
+                        });
+                    }
+                ).fail(function () {
+                    alert("error");
+                })
+
+            },
+            Save: function () {
+                var a = $(".selected");
+                var s = "";
+                for (let index = 0; index < a.length; index++) {
+                    var n = a[index].id.substr(6);
+                    if (s != "")
+                        s += ",";
+                    s += "DIR:" + Search.Detail[n].group;
+                }
+                console.log(s);
+                console.log(URL.admSaveUserPermissions + "?email=" + $("#selUsers").val() + "&allowedTags=" + s);
+                $.post(
+                    URL.admSaveUserPermissions + "?email=" + $("#selUsers").val(),
+                    s,
+                    function (data) {
+                        alert(data);
+                    }
+                );
+            }
+        }
+
+        function Init() {
+            Permissions.Load();
+
+            StorageManager.init();
+            Refresh();
+        }
+
+        function Refresh() {
+            if (StorageManager.hasStorage == "Yes") {
+                try {
+                    Search.Detail = JSON.parse(localStorage.getItem("Detail"));
+                } catch (e) { }
+
+                if (Search.Detail == null) {
+                    Search.Refresh();
+                }
+                else {
+                    Search.DisplayResults();
+                }
+            }
+            else {
+                Search.Refresh();
+            }
+        }
+
+        var Search = {
+            DataRefresh: function () {
+                StorageManager.hasStorage = "Refresh";
+                Refresh();
+            },
+            ImageList: [],
+            Detail: [],
+            Folder: "",
+            Refresh: function () {
+                Busy(true);
+                $.get(
+                    URL.TagSearch,
+                    function (data) {
+                        Search.Detail = data;
+                        if (StorageManager.hasStorage != "No") {
+                            try {
+                                localStorage.setItem("Detail", JSON.stringify(Search.Detail));
+                            } catch (error) {
+                                localStorage.setItem("Detail", "");
+                            }
+                        }
+                        Search.DisplayResults();
+                    });
+            },
+            DisplayResults: function () {
+                var s = "";
+                console.log("DISPLAYRESULTS")
+                console.log(Search.Detail)
+
+                var s = "";
+                var lastYear = "";
+                for (var f = 0; f < Search.Detail.length; f++) {
+                    var lastG = Search.Detail[f].group;
+                    if (lastG == null)
+                        lastG = "";
+                    if (lastG.length > 4) {
+                        if (lastG.substr(0, 4) != lastYear) {
+                            if (lastG.substr(0, 1) == "1" || lastG.substr(0, 1) == "2") {
+                                lastYear = lastG.substr(0, 4);
+                                s += "<div style='clear:both'></div><div class=titleh2>" + lastYear + "</div>";
+                            }
+                            else {
+                                if (lastYear != "OTHER") {
+                                    s += "<div style='clear:both'></div><div class=titleh2>OTHER</div>";
+                                    lastYear = "OTHER";
+                                }
+                            }
+                        }
+                    }
+                    var id = Search.Detail[f].id;
+                    var n = Search.Detail[f].numMedia;
+                    s += "<div class='lazy item' id='folder" + f + "' onclick=\"" + "Search.goFolder(" + f + ")" + "\" " +
+                        " style='background-size:160px 160px;' data-src=\"" + URL.Thumbs160 + id + "\"><div class=t>" + lastG +
+                        "</div><div class=n>" + n + "</div></div>";
+                }
+                $("#grouppanel").html(s);
+
+                $('.lazy').Lazy({
+                    // your configuration goes here
+                    scrollDirection: 'vertical',
+                    effect: 'fadeIn',
+                    visibleOnly: true,
+                    onError: function (element) {
+                        console.log('error loading ' + element.data('src'));
+                    },
+                });
+                Busy(false);
+            },
+            goFolder: function (n) {
+                if ($("#folder" + n).hasClass("selected")) {
+                    $("#folder" + n).removeClass("selected");
+                }
+                else {
+                    $("#folder" + n).addClass("selected");
+                }
+            }
+
+        }
+    </script>
+</body>
+</html>

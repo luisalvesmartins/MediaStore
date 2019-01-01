@@ -1,0 +1,798 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <link href="css/style.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
+    <script src="common.js"></script>
+    <script src="pxloader/PxLoader.js"></script>
+    <script src="pxloader/PxLoaderData.js"></script>
+
+    <script src="tagEditor/jquery.caret.min.js"></script>
+    <link rel="stylesheet" href="tagEditor/jquery.tag-editor.css">
+    <script src="tagEditor/jquery.tag-editor.min.js"></script>
+
+    <link rel="stylesheet" href="onoffswitch/on-off-switch.css">
+    <script type="text/javascript" src="onoffswitch/on-off-switch.js"></script>
+    <script type="text/javascript" src="onoffswitch/on-off-switch-onload.js"></script>
+
+    <script type="text/javascript" src="jquery.lazy-master/jquery.lazy.min.js"></script>
+
+    <script type="text/javascript" src="js/URL.js"></script>
+    <script type="text/javascript" src="js/helpers.js"></script>
+    <script type="text/javascript" src="js/masonry.pkgd.min.js"></script>
+    <script type="text/javascript" src="js/auth.js"></script>
+
+</head>
+<body>
+    <div id="header">
+        <div id="title">MediaStore</div>
+        <div id="topmenu">
+            <div id="lastupdate" onclick="DataRefresh()" style="cursor:pointer">...</div>
+            <div class="checkbox-container">
+                <input type="checkbox" id="switch1" name="switch1" checked>
+            </div>
+            <div class="login-provider">
+                <div><fb:login-button scope="public_profile,email" auto-logout-link="true" onlogin="onFacebookLogin();"></fb:login-button></div>
+            </div>
+        </div>
+
+    </div>
+    <div id="main" style="margin-bottom:50px">
+
+        <div id="grouppanelhost" style="display:block;padding-top:10px;">
+            <div class="panel" id="grouppanel"></div>
+        </div>
+        <div style="clear:both"></div>
+
+        <div class=tagspanel style="padding:10px;display:none;" id=divTagOpsTitle>
+            <div class="titleh2" onclick="TagOps.btnPress()">TAGS</div>
+        </div>
+        <div class=tagspanel style="padding:0 10px 10px 10px;display:none" id=divTagOps>
+
+            TAGS HERE
+            <input id="tags" type="text" value="">
+            <!--<button onclick="saveTagsAllImages()">SAVE</button>-->
+            <button onclick="Tags.ApplyToSelectedImages()">APPLY TO SELECTED</button>
+            <button onclick="Tags.ApplyToAllImages()">APPLY TO ALL</button>
+
+            <br />REPLACE TAGS:<br>
+            From<br>
+            <input id="tagsFrom" type="text" value="">
+            To<br>
+            <input id="tagsTo" type="text" value="">
+            <button onclick="Tags.ReplaceSelectedImages()">REPLACE IN SELECTED</button>
+            <button onclick="Tags.ReplaceAll()">REPLACE ALL</button>
+            <hr />
+            <button onclick="Tags.ShowAllTags()">SHOW ALL TAGS</button>
+            <hr />
+            <button id="btnRenameFolder" onclick="Media.RenameFolder()">RENAME FOLDER</button>
+            <button id="btnRenameFolderSelected" onclick="Media.RenameFolderSelected()">RENAME FOLDER SELECTED</button>
+        </div>
+        <div id="pages"></div>
+        <div class="panel" id="panel"></div>
+        <div style="clear:both"></div>
+        <div id="footerspace" style="min-height:30px"></div>
+    </div>
+    <div id="footer">
+        2018 Luis Alves Martins.
+        <a href="">Code here</a>
+    </div>
+
+
+    <div id=busy class="modal" style="display:none"><span class=helper></span><img style="vertical-align:middle" src="images/loading.gif"></div>
+
+    <div id=divImageDetails onclick="$('#divImageDetails').hide();" style="background-color:darkkhaki;position:fixed;width:100%;height:200px;bottom:0;z-index:5;padding:10px;display:none;">
+        <div style="width:100%;vertical-align: top;">
+            Tags:
+            <input id="tagsphoto" type="text" value="">
+            <button id=btnSavePhotoTags onclick="Tags.SavePhotoTags()">Save tags</button>
+        </div>
+        <div id=divDetail style="width:100%;column-count:3;height:100px;">...</div>
+        <button id=btnDeleteMedia onclick="Media.Delete()">DELETE Media</button>
+    </div>
+
+    <script>
+        function Init() {
+            new DG.OnOffSwitch({
+                el: '#switch1',
+                textOn: 'Single',
+                textOff: 'Multi',
+                listener: function (name, checked) {
+                    Settings.SingleSelection = checked;
+                    //$("#listener-text").html("Listener called for " + name + ", checked: " + checked);
+                }
+            });
+
+            TagOps.ShowTitle();
+
+            StorageManager.init();
+            Refresh();
+
+        }
+
+
+        var Media = {
+            Delete: function () {
+                var id = Icon.Selected;
+
+                if (confirm("Delete " + id + " ?")) {
+                    Buttons.disable("btnDeleteMedia");
+                    $.get(
+                        URL.adminMediaDelete + id,
+                        function (data) {
+                            Buttons.enable("btnDeleteMedia");
+                        });
+
+                }
+            },
+            RenameFolder: function () {
+                var oldDir = Search.Folder;
+                if (oldDir != "") {
+                    var newDir = prompt("Rename " + oldDir + " to:");
+                    if (confirm("Rename " + oldDir + " to " + newDir + " ?")) {
+                        Buttons.disable("btnRenameFolder");
+                        $.get(
+                            URL.adminRenameDirectory + "oldDir=" + oldDir + "&newDir=" + newDir,
+                            function (data) {
+                                Buttons.enable("btnRenameFolder");
+                            });
+
+                    }
+                }
+            },
+            RenameFolderSelected: function () {
+                var oldDir = Search.Folder;
+                if (oldDir != "") {
+                    var newDir = prompt("Rename " + oldDir + " to:");
+                    if (confirm("Rename " + oldDir + " to " + newDir + " ?")) {
+                        Buttons.disable("btnRenameFolderSelected");
+
+                        var a = $(".selected");
+                        for (let index = 0; index < a.length; index++) {
+                            var element = a[index].id.substr(1);
+                            console.log(URL.adminRenameDirectory + "oldDir=" + oldDir + "&newDir=" + newDir + "&id=" + element)
+                            $("#" + a[index].id).removeClass("selected");
+                            $.get(
+                                URL.adminRenameDirectory + "oldDir=" + oldDir + "&newDir=" + newDir + "&id=" + element,
+                                function (data) {
+                                    //console.log(data);
+                                    Buttons.enable("btnRenameFolderSelected");
+                                });
+                        }
+                    }
+                }
+            }
+        }
+
+
+        var lastSelected = null;
+        $("#panel").on('click', '.grid-item-content', function (event) {
+            var id = event.currentTarget.id.substr(1);
+
+            if (!Settings.SingleSelection) {
+                if ($("#p" + id).hasClass("selected")) {
+                    $("#p" + id).removeClass("selected");
+                }
+                else {
+                    $("#p" + id).addClass("selected");
+                }
+            }
+            else {
+                //HANDLE LAST SELECTED
+                if (id != lastSelected && lastSelected != null) {
+                    var p = $("#q" + lastSelected).parent('.grid-item');
+                    p.removeClass('is-expanded');
+                    p.removeClass('is-expanded2');
+                    var i = $("#p" + lastSelected);
+                    i.attr("src", URL.Thumbs160 + lastSelected);
+                }
+                lastSelected = id;
+                var p = $("#q" + id).parent('.grid-item');
+                var i = $("#p" + id);
+                //if ($( "#p" + id ).parent('.grid-item').hasClass('is-expanded'))
+                if (p.hasClass('is-expanded')) {
+                    p.removeClass('is-expanded');
+                    i.attr("src", URL.Thumbs1000 + id + SAS);
+                    p.addClass('is-expanded2');
+                }
+                else {
+                    if (p.hasClass('is-expanded2')) {
+                        p.removeClass('is-expanded2');
+                    }
+                    else {
+                        p.addClass('is-expanded');
+                        i.attr("src", URL.Thumbs320 + id + SAS);
+                        Icon.ShowDetail(id);
+                        //$(event.currentTarget).attr("src",URL.Thumbs320 + id + SAS);
+                    }
+                }
+
+                $("#panel").masonry();
+
+            }
+
+
+        });
+
+        var TagOps = {
+            status: false,
+            btnPress: function () {
+                TagOps.status = !TagOps.status;
+                if (TagOps.status) {
+                    TagOps.Show();
+                }
+                else {
+                    TagOps.Hide();
+                }
+            },
+            Hide: function () {
+                $("#divTagOps").slideUp("slow", function () {
+                    // Animation complete.
+                });
+            },
+            Show: function () {
+                $("#divTagOps").slideDown("slow", function () {
+                    // Animation complete.
+                });
+            },
+            ShowTitle: function () {
+                $("#divTagOpsTitle").show();
+            }
+        }
+
+
+        function DataRefresh() {
+            StorageManager.hasStorage = "Refresh";
+            Refresh();
+        }
+
+
+        var TagList = [];
+        var FullTagList = [];
+        var SAS = "";
+
+
+        function Refresh() {
+            TagList = [];
+            FullTagList = [];
+            var loader = new PxLoader()
+            loadSAS = loader.addData(URL.SAS);
+            if (StorageManager.hasStorage == "Yes") {
+                try {
+                    FullTagList = JSON.parse(localStorage.getItem("FullTagList"));
+                } catch (error) {
+                    FullTagList = null;
+                }
+            }
+            if (FullTagList == null || StorageManager.hasStorage == "Refresh")
+                loadAllTagList = loader.addData(URL.getAllTagValues);
+
+            // callback that will be run once images are ready
+            loader.addCompletionListener(function () {
+                SAS = loadSAS.response;
+                if (FullTagList == null || StorageManager.hasStorage == "Refresh") {
+                    FullTagList = JSON.parse(loadAllTagList.response);
+                    localStorage.setItem("FullTagList", JSON.stringify(FullTagList));
+                }
+                if (StorageManager.hasStorage == "Yes") {
+                    try {
+                        Search.Detail = JSON.parse(localStorage.getItem("Detail"));
+                    } catch (e) { }
+
+                    if (Search.Detail == null) {
+                        Search.Refresh();
+                    }
+                    else {
+                        //var cond = JSON.parse(localStorage.getItem("SearchCond"));
+                        //Group.FromObject(cond);
+
+                        Search.DisplayResults();
+                    }
+                }
+                else {
+                    Search.Refresh();
+                }
+
+                goT();
+            });
+
+            loader.start();
+        }
+
+        var Panel = {
+            Hide: function () {
+                $("#panel").html("");
+            }
+        }
+        var Search = {
+            ImageList: [],
+            Detail: [],
+            Folder: "",
+            maxPageSize : 200,
+            Refresh: function () {
+                Busy(true);
+                //Group.btnGroupPress(0);
+                Panel.Hide();
+                $.get(
+                    URL.TagSearch, //+ "?" + document.all("txtCond").value.toUpperCase() + "&groupby=" + document.all("txtGroupby").value,
+                    function (data) {
+                        $("#grouppanelhost").height("");
+                        Search.Detail = data;
+                        //Detail.sort(sortOnGroup);
+                        console.log(Search.Detail)
+                        if (StorageManager.hasStorage != "No") {
+                            try {
+                                localStorage.setItem("Detail", JSON.stringify(Search.Detail));
+                            } catch (error) {
+                                localStorage.setItem("Detail", "");
+                            }
+                        }
+                        Search.DisplayResults();
+                    });
+            },
+            DisplayResults: function () {
+                //console.log(Search.Detail)
+
+                var s = "";
+                var lastYear = "";
+                for (var f = 0; f < Search.Detail.length; f++) {
+                    var lastG = Search.Detail[f].group;
+                    if (lastG == null)
+                        lastG = "";
+                    if (lastG.length > 4) {
+                        if (lastG.substr(0, 4) != lastYear) {
+                            if (lastG.substr(0, 1) == "1" || lastG.substr(0, 1) == "2") {
+                                lastYear = lastG.substr(0, 4);
+                                s += "<div style='clear:both'></div><div class=titleh2>" + lastYear + "</div>";
+                            }
+                            else {
+                                if (lastYear != "OTHER") {
+                                    s += "<div style='clear:both'></div><div class=titleh2>OTHER</div>";
+                                    lastYear = "OTHER";
+                                }
+                            }
+                        }
+                    }
+                    var id = Search.Detail[f].id;
+                    var n = Search.Detail[f].numMedia;
+                    s += "<div class='lazy item' id='folder" + f + "' onclick=\"" + "Search.goFolder(" + f + ")" + "\" " +
+                        " style='background-size:160px 160px;' data-src=\"" + URL.Thumbs160 + id + "\"><div class=t>" + lastG +
+                        "</div><div class=n>" + n + "</div></div>";
+                }
+                $("#grouppanel").html(s);
+
+                //Group.btnGroupPress(1);
+                $('.lazy').Lazy({
+                    // your configuration goes here
+                    scrollDirection: 'vertical',
+                    effect: 'fadeIn',
+                    visibleOnly: true,
+                    onError: function (element) {
+                        console.log('error loading ' + element.data('src'));
+                    },
+                });
+                Busy(false);
+            },
+            goFolder: function (n) {
+                var group = Search.Detail[n].group;//.replaceAll('\\', '\\\\');
+                Search.Folder = group;
+
+                $.get(
+                    URL.TagSearchDetail + group, //+ "?" + document.all("txtCond").value.toUpperCase() + "&groupby=" + document.all("txtGroupby").value,
+                    function (data) {
+                        Search.ImageList = data;
+
+                        Search.Paginator();
+                        Search.goPage(0);
+                    }
+                );
+
+            },
+            Paginator: function () {
+                var sPages = "";
+                for (var f = 0; f < Search.ImageList.length / Search.maxPageSize; f++) {
+                    sPages += "<button id=pagbu" + f + " class=bu onclick='Search.goPage(" + f + ")'>" + (f + 1) + "</button>";
+                }
+                var maxPage = Search.ImageList.length;
+                if (maxPage > Search.maxPageSize) {
+                    sPages += "&nbsp;<button id=pagbuall class=bu onclick='Search.goPage(-1)'>ALL</button>";
+                    $("#pages").html(sPages);
+                    maxPage = Search.maxPageSize;
+                }
+                else
+                    $("#pages").html("");
+            },
+            bLastSel: "",
+            goPage: function (n) {
+                var s = "";
+                var max = Search.maxPageSize;
+                if (Search.bLastSel != "")
+                    $("#" + Search.bLastSel).removeClass("bselected");
+                if (n == -1) {
+                    max = Search.ImageList.length;
+                    Search.bLastSel = "pagbuall";
+                    $("#" + Search.bLastSel).addClass("bselected");
+                    n = 0;
+                }
+                else {
+                    Search.bLastSel = "pagbu" + n;
+                    $("#" + Search.bLastSel).addClass("bselected");
+                }
+                for (var g = 0; g < max; g++) {
+                    f = Search.maxPageSize * n + g;
+                    if (f < Search.ImageList.length) {
+                        var id = Search.ImageList[f].id;
+                        s += "<div class='grid-item'><div id='q" + id + "' class='grid-item-content imq'>" +
+                            "<div id='text" + id + "' class=imt></div>" +
+                            "<img id='p" + id + "' class=imp src='" + URL.Thumbs160 + id + "'>" +
+                            "</div></div>";
+
+                    }
+                }
+                $("#panel").html(s);
+                if (masonryDisplayed)
+                    $('#panel').masonry('destroy')
+                masonryDisplayed = true;
+                $('#panel').masonry({
+                    itemSelector: '.grid-item',
+                    columnWidth: 162
+                });
+                Busy(false);
+            }
+        }
+
+        var TagOptions = [];
+        function goT() {
+            var lastE = "";
+            console.log(FullTagList.length)
+            TagList = [];
+            for (let index = 0; index < FullTagList.length; index++) {
+                const element = FullTagList[index];
+                if (element.tagType != lastE) {
+                    TagList.push(element.tagType);
+                    lastE = element.tagType;
+                }
+                if (element.tagType != "DATE" && element.tagType != "FILENAME")
+                    TagOptions.push(element.tagType + ":" + element.tagValue);
+            }
+
+            $("#tagsphoto").tagEditor('destroy');
+            $("#tagsphoto").tagEditor({
+                placeholder: "enter tags",
+                removeDuplicates: true,
+                clickDelete: true,
+                sortable: true,
+                autocomplete: {
+                    delay: 0, // show suggestions immediately
+                    position: { collision: 'flip' }, // automatic menu position up/down
+                    source: TagOptions
+                },
+            });
+
+            $("#tags").tagEditor('destroy');
+            $("#tags").tagEditor({
+                placeholder: "enter tags",
+                removeDuplicates: true,
+                clickDelete: true,
+                sortable: true,
+                autocomplete: {
+                    delay: 0, // show suggestions immediately
+                    position: { collision: 'flip' }, // automatic menu position up/down
+                    source: TagOptions
+                },
+            });
+
+            $("#tagsFrom").tagEditor('destroy');
+            $("#tagsFrom").tagEditor({
+                placeholder: "enter tags",
+                removeDuplicates: true,
+                clickDelete: true,
+                sortable: true,
+                beforeTagSave: function (field, editor, tags, tag, val) {
+                    // if (TagOptions.indexOf(val.toUpperCase())<0)
+                    // {
+                    // 	alert("Tag does not exist: " + val);
+                    // 	// val="";
+                    // 	return false;
+                    // }
+                    //$('#response').prepend('Tag ' + val + ' saved' + (tag ? ' over ' + tag : '') + '.');
+                },
+                autocomplete: {
+                    delay: 0, // show suggestions immediately
+                    position: { collision: 'flip' }, // automatic menu position up/down
+                    source: TagOptions
+                },
+            });
+            $("#tagsTo").tagEditor('destroy');
+            $("#tagsTo").tagEditor({
+                placeholder: "enter tags",
+                removeDuplicates: true,
+                clickDelete: true,
+                sortable: true,
+                autocomplete: {
+                    delay: 0, // show suggestions immediately
+                    position: { collision: 'flip' }, // automatic menu position up/down
+                    source: TagOptions
+                },
+            });
+
+        }
+
+
+
+
+        var masonryDisplayed = false;
+        function openI() {
+            window.open(URL.Media + did + SAS);
+        }
+        var Settings = {
+            SingleSelection: true,
+        };
+
+        var Buttons = {
+            disable: function (id) {
+                $("#" + id).addClass("disabled");
+            },
+            enable: function (id) {
+                $("#" + id).removeClass("disabled");
+            }
+        };
+
+        var Tags = {
+            ShowAllTags: function () {
+                for (let index = 0; index < Search.ImageList.length; index++) {
+                    $.get(
+                        URL.getMediaInfo + Search.ImageList[index].id,
+                        function (data) {
+                            var tags = data.tags;
+                            tags = tags.replaceAll(",", "<br>");
+                            $("#text" + Search.ImageList[index].id).html(tags);
+                        }
+                    );
+                }
+            },
+            ApplyToSelectedImages: function () {
+                var loader = new PxLoader();
+                var tags = document.all("tags").value;
+                var a = $(".selected");
+                for (let index = 0; index < a.length; index++) {
+                    const element = a[index];
+                    console.log(index + "->" + element.id);
+                    $("#" + element.id).removeClass("selected");
+                    var dummy = loader.addData(URL.adminAddMediaTags + element.id.substr(1) + "&tags=" + tags);
+                    console.log("DOING:" + URL.adminAddMediaTags + element.id.substr(1) + "&tags=" + tags);
+                }
+                loader.addCompletionListener(function () {
+                    alert("done");
+                });
+
+                loader.start();
+            },
+            ApplyToAllImages: function () {
+                var loader = new PxLoader();
+                var tags = document.all("tags").value;
+                for (let index = 0; index < Search.ImageList.length; index++) {
+                    var dummy = loader.addData(URL.adminAddMediaTags + Search.ImageList[index].id + "&tags=" + tags);
+                    console.log("APPLY:" + URL.adminAddMediaTags + Search.ImageList[index].id + "&tags=" + tags);
+                }
+                loader.addCompletionListener(function () {
+                    alert("done");
+                });
+
+                loader.start();
+            },
+            ReplaceSelectedImages: function () {
+                var tagFrom = document.all("tagsFrom").value;
+                var tagTo = document.all("tagsTo").value;
+                var loader = new PxLoader();
+                var a = $(".selected");
+                for (let index = 0; index < a.length; index++) {
+                    const element = a[index].id.substring(1);
+
+                    loader.addData(URL.deleteMediaTags + element + "&tags=" + tagFrom);
+                    console.log("DELETING:" + element + "->" + tagFrom);
+                }
+                for (let index = 0; index < a.length; index++) {
+                    const element = a[index].id.substring(1);
+
+                    loader.addData(URL.adminAddMediaTags + element + "&tags=" + tagTo);
+                    console.log("ADDING:" + element + "->" + tagTo);
+                    $("#" + element).removeClass("selected");
+
+                }
+                loader.addCompletionListener(function () {
+                    alert("done");
+                });
+                loader.start();
+            },
+            ReplaceAll: function () {
+                var tagFrom = document.all("tagsFrom").value;
+                var tagTo = document.all("tagsTo").value;
+                var loader = new PxLoader();
+                for (let index = 0; index < ImageList.length; index++) {
+                    loader.addData(URL.deleteMediaTags + ImageList[index] + "&tags=" + tagFrom);
+                    console.log("DELETING:" + ImageList[index] + "->" + tagFrom);
+                }
+                for (let index = 0; index < ImageList.length; index++) {
+                    loader.addData(URL.adminAddMediaTags + ImageList[index] + "&tags=" + tagTo);
+                    console.log("ADDING:" + ImageList[index] + "->" + tagTo);
+                }
+                loader.addCompletionListener(function () {
+                    alert("done");
+                });
+                loader.start();
+            },
+            SavePhotoTags: function () {
+                Buttons.disable("btnSavePhotoTags");
+                var tags = document.all("tagsphoto").value;
+                console.log(Icon.Selected + "->" + tags);
+                console.log(URL.adminSaveMediaTags + Icon.Selected + "&tags=" + tags);
+                $.get(
+                    URL.adminSaveMediaTags + Icon.Selected + "&tags=" + tags,
+                    function (data) {
+                        Buttons.enable("btnSavePhotoTags");
+                        //alert("SAVED");
+                    }
+                ).fail(function (jqXHR, textStatus, errorThrown) {
+                    alert("Erro");
+                    console.log(textStatus);
+                });
+
+            }
+
+        }
+
+        var Icon = {
+            Selected: -1,
+            ShowDetail: function (id) {
+                Icon.Selected = id;
+
+                $.get(
+                    URL.getMediaInfo + id,
+                    function (data) {
+                        var tags = "";
+                        var exif = data.exif;
+                        if (exif != null) {
+                            try {
+                                var j = JSON.parse(exif);
+                                if (j["Date/Time Original"] != null)
+                                    tags += "Date:" + j["Date/Time Original"] + "<br>";
+                            } catch (e) {
+                                console.log("No exif");
+                            }
+                        }
+                        $("#text" + id).html(id + "<br>" + tags);
+                    });
+
+                $.get(
+                    URL.Vision + Icon.Selected + SAS,
+                    function (data) {
+                        Icon.ShowDetailImage(data);
+                    })
+                    .fail(function (jqXHR, textStatus, errorThrown) {
+                        console.log("NO VISION INFO");
+                        Icon.ShowDetailImage("");
+                    });
+            },
+            ShowDetailImage(data) {
+                $("#tagsphoto").tagEditor('destroy');
+                $("#tagsphoto").tagEditor({
+                    placeholder: "enter tags",
+                    removeDuplicates: true,
+                    clickDelete: true,
+                    sortable: true,
+                    autocomplete: {
+                        delay: 0, // show suggestions immediately
+                        position: { collision: 'flip' }, // automatic menu position up/down
+                        source: TagOptions
+                    },
+                });
+                ///TAGS
+                //document.all("tagsphoto").value = "";
+                //REMOVETAGS
+                if ($('#tagsphoto').tagEditor('getTags')[0]) {
+
+                    var tags = $('#tagsphoto').tagEditor('getTags')[0].tags;
+                    for (i = 0; i < tags.length; i++) { $('#tagsphoto').tagEditor('removeTag', tags[i]); }
+                }
+
+                console.log("SELECTED:" + Icon.Selected)
+                //SHOWTAGS
+                $.get(
+                    URL.getMediaInfo + Icon.Selected,
+                    function (data) {
+                        console.log(data.tags);
+                        if (data.tags) {
+                            var a = data.tags.split(",");
+                            for (var f = 0; f < a.length; f++) {
+                                //console.log(a[f])
+                                $('#tagsphoto').tagEditor('addTag', a[f]);
+                            }
+                        }
+                    }
+                );
+
+
+                data += "";
+                if (data !== "") {
+                    var s = "";
+                    //s+="<div class=b>CreationTime</div><div>" + data.creationTime + "</div>";
+                    //s+="<div class=b>Size</div><div>" + data.length + "</div>";
+                    var vision = JSON.parse(data);
+                    var sL = "";
+                    for (var f = 0; f < vision.categories; f++) {
+                        if (vision.categories[f].detail !== null) {
+                            for (var g = 0; g < vision.categories.detail[f].landmarks; g++) {
+                                if (sL === "")
+                                    sL = "<div class=b>Landmarks</div>";
+                                sL += vision.categories.detail[f].landmarks[g].name;
+                            }
+
+                        }
+                    }
+                    s += sL;
+                    //s+="<div class=b>Categories</div><div>" + JSON.stringify(vision.categories) + "</div>";
+                    // var c="<span style='color:" + vision.color.dominantColorForeground + "'>" + vision.color.dominantColorForeground + "</span>";
+                    // c+="/<span style='color:" + vision.color.dominantColorBackground + "'>" + vision.color.dominantColorBackground + "</span>";
+                    //vision.color
+                    //s+="<div class=b>Dominant Colors</div><div>" + c + "</div>";
+                    c = "";
+                    for (f = 0; f < vision.tags.length; f++) {
+                        if (vision.tags[f].confidence > .2) {
+                            if (c !== "")
+                                c += ", ";
+                            c += vision.tags[f].name
+                        }
+                    }
+                    //JSON.stringify(vision.tags)
+                    s += "<div class=b>Tags</div><div>" + c + "</div>";
+                    if (vision.description.captions) {
+                        c = vision.description.captions[0].text;
+                        //JSON.stringify(vision.description)
+                        s += "<div class=b>Description</div><div>" + c + "</div>";
+                    }
+                    s += "<div class=b style='break-before: column;'>Faces</div><div>" + JSON.stringify(vision.faces) + "<canvas id=cnvFace width=200px height=200px></canvas></div>";
+                    //s+="<div class=b>metadata</div><div>" + JSON.stringify(vision.metadata) + "</div>";
+                    s += "<div></div><div><button onclick=openI()>Open</button></div>";
+
+                    var w = vision.metadata.width;
+                    var h = vision.metadata.height;
+
+                    $("#divDetail").html(s);
+                    //cnvFace
+                    var context = cnvFace.getContext('2d');
+                    var imageObj = new Image();
+
+                    imageObj.onload = function () {
+                        context.drawImage(imageObj, 0, 0, 200, 112);
+                        if (vision.faces) {
+                            for (var f = 0; f < vision.faces.length; f++) {
+                                var color = "cyan";
+                                if (vision.faces[f].gender === "Female")
+                                    color = "pink";
+                                context.beginPath();
+                                context.rect(vision.faces[f].faceRectangle.left / 5, vision.faces[f].faceRectangle.top / 5,
+                                    vision.faces[f].faceRectangle.width / 5, vision.faces[f].faceRectangle.height / 5);
+                                context.lineWidth = 2;
+                                context.strokeStyle = color;
+                                context.stroke();
+                            }
+                        }
+                    };
+                    imageObj.src = URL.Thumbs1000 + Icon.Selected + SAS;
+                }
+                else
+                    $("#divDetail").html("");
+                $("#divImageDetails").slideDown("slow", function () {
+                    // Animation complete.
+                });
+
+            }
+        }
+    </script>
+</body>
+</html>

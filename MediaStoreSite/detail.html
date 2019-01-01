@@ -1,0 +1,272 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <link href="css/style.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
+    <script src="js/masonry.pkgd.min.js"></script>
+    <script src="galleria/galleria-1.5.7.min.js"></script>
+
+    <script type="text/javascript" src="js/URL.js"></script>
+    <script type="text/javascript" src="js/helpers.js"></script>
+    <script type="text/javascript" src="js/auth.js"></script>
+
+</head>
+<body>
+    <div id="header">
+        <div id="title">MediaStore</div>
+        <div id="topmenu">
+            <div onclick="Slideshow()">
+                Slideshow
+            </div>
+            <div class="login-provider">
+                <div><fb:login-button scope="public_profile,email" auto-logout-link="true" onlogin="onFacebookLogin();"></fb:login-button></div>
+            </div>
+        </div>
+        <div style="position:absolute;left:10px;top:40px;display:table;">
+            <button onclick="StorageManager.hasStorage = 'Refresh';Search.Refresh()">Refresh</button>
+        </div>
+    </div>
+    <div id="main" style="margin-bottom:50px">
+        <div id="pages"></div>
+        <div class="panel" id="panel"></div>
+        <div style="clear:both"></div>
+    </div>                
+
+    <div id="footer">
+        2018 Luis Alves Martins.
+        <a href="">Code here</a>
+    </div>
+
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <div id=modal2 style="display:none">
+            </div>
+        </div>
+    </div>
+    <div id=g1 class="modal">
+        <span class="helper"></span>
+        <div id=gal class=galleria style="height:100%;width:100%;vertical-align:middle;top:0;position:fixed;"></div>
+        <div id="close" style="position:fixed;top:10px;right:10px;background-color:white;border:1px solid;color:black;cursor:pointer;opacity:0.5;padding:5px;" onclick="$('#g1').hide();">X</div>
+    </div>
+    <div id=busy class="modal"><span class=helper></span><img style="vertical-align:middle" src="images/loading.gif"></div>
+
+    <script>
+        var SAS = "";
+        function Init() {
+            StorageManager.init();
+            $.get(
+                URL.SAS,
+                function (data) {
+                    SAS = data;
+                    Search.Refresh();
+                });
+        }
+
+        var lastSelected = null;
+        $("#panel").on('click', '.grid-item-content', function (event) {
+            var id = event.currentTarget.id.substr(1);
+
+            //HANDLE LAST SELECTED
+            if (id != lastSelected && lastSelected != null) {
+                var p = $("#q" + lastSelected).parent('.grid-item');
+                p.removeClass('is-expanded');
+                p.removeClass('is-expanded2');
+                var i = $("#p" + lastSelected);
+                i.attr("src", URL.Thumbs160 + lastSelected);
+                $("#text" + lastSelected).hide();
+            }
+            lastSelected = id;
+            var p = $("#q" + id).parent('.grid-item');
+            var i = $("#p" + id);
+            //if ($( "#p" + id ).parent('.grid-item').hasClass('is-expanded'))
+            if (p.hasClass('is-expanded')) {
+                p.removeClass('is-expanded');
+                i.attr("src", URL.Thumbs1000 + id + SAS);
+                p.addClass('is-expanded2');
+            }
+            else {
+                if (p.hasClass('is-expanded2')) {
+                    p.removeClass('is-expanded2');
+                    $("#text" + lastSelected).hide();
+                }
+                else {
+                    p.addClass('is-expanded');
+                    i.attr("src", URL.Thumbs320 + id + SAS);
+
+                    $("#text" + id).show();
+                    if ($("#text" + id).html() == "") {
+                        $.get(
+                            URL.getMediaInfo + id,
+                            function (data) {
+                                var tags = data.tags;
+                                if (tags == null)
+                                    tags = "";
+                                else
+                                    tags = data.tags.replaceAll(",", ", ") + "<br>";
+                                var exif = data.exif;
+                                if (exif != null) {
+                                    try {
+                                        var j = JSON.parse(exif);
+                                        if (j["Date/Time Original"] != null)
+                                            tags += "Date:" + j["Date/Time Original"] + "<br>";
+                                    } catch (e) {
+
+                                    }
+                                }
+                                $("#text" + id).html(tags + id);
+                            }
+                        );
+                    }
+                    //$(event.currentTarget).attr("src",URL.Thumbs320 + id + SAS);
+                }
+            }
+
+            try {
+                $('#panel').masonry('destroy')
+
+            } catch (error) {
+
+            }
+            $('#panel').masonry({
+                itemSelector: '.grid-item',
+                columnWidth: 162
+            });
+
+        });
+
+        function Slideshow() {
+            document.all("g1").style.display = "block";
+            //toggleDisplay('myModal', true);
+            var data = [];
+            for (let index = 0; index < Search.ImageList.length; index++) {
+                //                if (".MOV.AVI.DIVX.MPEG.MPG.MP4.MP3.MTS.HEIC.M4V.AAE.".indexOf(ImageList[index].extension.toUpperCase() + ".") < 0) {
+
+                data.push({
+                    image: URL.Thumbs1000 + Search.ImageList[index] + SAS,
+                    thumb: URL.Thumbs160 + Search.ImageList[index],
+                    //big: URL.Media + ImageList[index] + SAS,
+                    title: Search.ImageList[index],
+                    description: 'description'
+                });
+                //              }
+            }
+            Galleria.loadTheme('galleria/themes/classic/galleria.classic.js');
+            Galleria.configure({
+            });
+            Galleria.run('.galleria', {
+                dataSource: data
+            });
+        }
+
+ 
+        var Search = {
+            ImageList:[],
+            Refresh: function () {
+                var eventSel = URL.querystring("s");
+                if (eventSel == null)
+                    eventSel = "";
+
+                Busy(true);
+                var sKey = window.location.search.substring(1);
+                Detail = [];
+                if (StorageManager.hasStorage == "Yes") {
+                    Detail = JSON.parse(localStorage.getItem(sKey));
+                    if (Detail != null) {
+                        Search.DisplayResults();
+                        Busy(false);
+                    }
+                    else
+                        Detail = [];
+                }
+                if (Detail.length == 0) {
+                    $.get(
+                        URL.SearchDetail + eventSel,
+                        //URL.getMediaWithTags + cond.toUpperCase() + "&groupby=" + groupby,
+                        function (data) {
+                            Detail = data;
+                            //console.log(Detail)
+                            if (StorageManager.hasStorage != "No") {
+                                var s = window.location.search.substring(1);
+                                localStorage.setItem(s, JSON.stringify(data));
+                            }
+                            Search.DisplayResults();
+                            Busy(false);
+                        });
+                }
+            },
+            firstDisplayResults: true,
+            maxPageSize:200,
+            DisplayResults: function () {
+                var s = "";
+                //console.log(Detail)
+
+                Search.ImageList = [];
+                for (var f = 0; f < Detail.length; f++) {
+                    Search.ImageList.push(Detail[f].id);
+                }
+
+                Search.Paginator();
+                Search.goPage(0);
+            },
+            Paginator: function () {
+                var sPages = "";
+                for (var f = 0; f < Search.ImageList.length / Search.maxPageSize; f++) {
+                    sPages += "<button id=pagbu" + f + " class=bu onclick='Search.goPage(" + f + ")'>" + (f + 1) + "</button>";
+                }
+                var maxPage = Search.ImageList.length;
+                if (maxPage > Search.maxPageSize) {
+                    sPages += "&nbsp;<button id=pagbuall class=bu onclick='Search.goPage(-1)'>ALL</button>";
+                    $("#pages").html(sPages);
+                    maxPage = Search.maxPageSize;
+                }
+                else
+                    $("#pages").html("");
+            },
+            bLastSel:"",
+            goPage: function (n) {
+                var s = "";
+                var max = Search.maxPageSize;
+                if (Search.bLastSel != "")
+                    $("#" + Search.bLastSel).removeClass("bselected");
+                if (n == -1) {
+                    max = Search.ImageList.length;
+                    Search.bLastSel = "pagbuall";
+                    $("#" + Search.bLastSel).addClass("bselected");
+                    n = 0;
+                }
+                else {
+                    Search.bLastSel = "pagbu" + n;
+                    $("#" + Search.bLastSel).addClass("bselected");
+                }
+                for (var g = 0; g < max; g++) {
+                    f = Search.maxPageSize * n + g;
+                    if (f < Search.ImageList.length) {
+                        var id = Search.ImageList[f];
+                        s += "<div class='grid-item'><div id='q" + id + "' class='grid-item-content imq'>" +
+                            "<div id='text" + id + "' class=imt></div>" +
+                            "<img id='p" + id + "' class=imp src='" + URL.Thumbs160 + id + "'>" +
+                            "</div></div>";
+
+                    }
+                }
+                $("#panel").html(s);
+                if (masonryDisplayed)
+                    $('#panel').masonry('destroy')
+                masonryDisplayed = true;
+                $('#panel').masonry({
+                    itemSelector: '.grid-item',
+                    columnWidth: 162
+                });
+                Busy(false);
+            }
+        }
+        var masonryDisplayed = false;
+        function openI() {
+            window.open(URL.Media + did + SAS);
+        }
+    </script>
+</body>
+</html>

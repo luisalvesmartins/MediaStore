@@ -1,0 +1,221 @@
+html, body {
+    font: 12px 'Segoe UI';
+    margin: 0;
+}
+#header {
+    position:fixed;
+    height:80px;
+    top:0;
+    width:100%;
+    z-index:1;
+    background-color:white;
+    padding:12px 10px;
+    font:30px 'Segoe UI Light';
+}
+#topmenu{
+    position:absolute;
+    top:0;
+    right:0;
+    font-size:18px;
+    background-color:#dedede;
+    padding-left:10px;
+    padding-top:5px;
+    padding-bottom:5px;
+}
+#topmenu>div{
+    float:left;
+    margin-right:10px;
+    cursor:pointer;
+}
+#footer {
+    position:fixed;
+    bottom:0;
+    left:0;
+    padding:12px 10px;
+    background-color: white;
+    width:100%;
+    z-index:1;
+}
+#main {
+    display: block;
+    margin-top:90px;
+    margin-bottom:70px;
+}
+
+.s320 {
+    height:320px;
+    width:320px;
+}
+.s160 {
+    height:160px;
+    width:160px;
+}
+.t {
+    position: absolute;
+    background-color: black;
+    opacity: 0.8;
+    color: white;
+    padding: 2px;
+    min-width: 160px;
+    font-size: 10px;
+}
+.n{
+    position:absolute; 
+    right:0;
+    bottom:0; 
+    margin:0 0 5px 0;
+    padding: 2px 12px 2px 2px;
+    background-color:black;
+    opacity: 0.8;
+    color:white;
+}
+
+.b{
+    font-weight: bold;
+}
+
+.icon{
+    width:20px;
+    height:20px;
+    cursor: pointer;
+    margin-left:10px;
+}
+#backbtn{
+    margin-bottom:-4px;
+    cursor:pointer;
+}
+
+
+
+
+/* ---- grid ---- */
+* { box-sizing: border-box; }
+
+.panel {
+    max-width: 100%;
+    padding-left:10px;
+    padding-right:10px;
+  }
+  /* clear fix */
+  .panel:after {
+    content: '';
+    display: block;
+    clear: both;
+  }
+
+.item {
+    float: left;
+    width: 160px;
+    height: 160px;
+    margin-right: 1px;
+    margin-bottom: 1px;
+    cursor: pointer;
+    position: relative;
+    background-size: 160px 160px;
+}
+
+  .grid-item,grid-item-content {
+    /*float: left;*/
+    width: 160px;
+    height: 160px;
+    margin-right:2px;
+    margin-bottom:2px;
+    cursor: pointer;
+  }
+  .grid-item-content {
+    width: 160px;
+    height: 160px;
+    -webkit-transition: width 0.4s, height 0.4s;
+            transition: width 0.4s, height 0.4s;
+  }
+  .grid-item.is-expanded,
+  .grid-item.is-expanded .grid-item-content {
+    width: 320px;
+    height: 320px;
+  }
+  .grid-item.is-expanded {
+    z-index: 2;
+  }
+  .grid-item.is-expanded2,
+  .grid-item.is-expanded2 .grid-item-content {
+    width: 960px;
+    height: 960px;
+  }
+  .grid-item.is-expanded2 {
+    z-index: 2;
+  }
+
+  .size2 { width: 320px; height: 320px; margin-bottom:4px;margin-right:4px;}
+  .normal { width: 160px; height:160px; margin-right:2px; margin-bottom:2px;}
+
+  .selected {
+    opacity: 0.7;
+    transition: .5s ease;
+	border:3px solid black;
+	border-top-right-radius: 20px;
+  }
+.disabled{
+    background-color: white;
+    
+}
+
+.tagspanel{background-color:#dddddd}
+.grouppanel{background-color:#eeeeee;}
+
+.modal {
+    display: none;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    z-index: 1000;
+    text-align: center;
+    vertical-align: middle;
+}
+.helper {
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+}
+
+.titleh2 {
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.imt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: black;
+    color: white;
+    text-align: left;
+    width: 100%;
+    opacity:0.8;
+    font-size:10px;
+}
+
+.imq {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+}
+.imp {
+    width: 100%;
+    height: auto;
+}
+
+.bu{
+    margin-left:10px;
+    margin-bottom:10px;
+}
+.bselected {
+    opacity: 0.7;
+    transition: .5s ease;
+    border: 3px solid black;
+}
