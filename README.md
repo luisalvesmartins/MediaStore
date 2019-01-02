@@ -28,12 +28,13 @@ C# functions that access azure storage to be deployed in Azure Functions
 1. Create an Azure blob storage account
 2. Deploy the [Site](./MediaStoreSite):
     - Change the "yourblob" and "yourfunctions" string inside js/URL.js
-    - Create a container and copy the site files inside. Use your favourite Azure Storage Explorer to do it.
+    - Create a container named "site" and copy the site files inside. Use your favourite Azure Storage Explorer to do it.
+    - Ensure the container has public access. In the azure functions we will create a proxy to this container.
 3. Deploy the [Azure Functions](./Functions)
     - Edit proxies.json and change yourblob name
     - Edit localsettings.json to add the setting keys
     - Deploy to Azure Functions
-4. Run PhotoUploader
-5. While it's running, configure Facebook authentication and point it to your site
-6. Edit the userpermissions to add your facebook email address
-7. Browse your site
+4. Start uploading your media by running PhotoUploader
+5. While it's running, configure Facebook authentication and point it to your functions site. In the Facebook Login settings configure the "Valid OAuth Redirect URIs to https://yourfunctionname.azurewebsites.net/.auth/login/facebook/callback
+6. Init the  usersecurity storage table with your facebook email address.
+7. Browse your site by navigating to: https://yourfunctionname.azurewebsites.net/
