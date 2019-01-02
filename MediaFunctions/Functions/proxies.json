@@ -1,0 +1,19 @@
+﻿{
+    "$schema": "http://json.schemastore.org/proxies",
+    "proxies": {
+        "proxy0": {
+            "matchCondition": {
+                "methods": [ "GET" ],
+                "route": "/"
+            },
+            "backendUri": "https://yourblob.blob.core.windows.net/site/index.html"
+        },
+        "proxy1": {
+            "matchCondition": {
+                "methods": [ "GET" ],
+                "route": "/site/{*restOfPath}"
+            },
+            "backendUri": "https://yourblob.blob.core.windows.net/site/{restOfPath}"
+        }
+    }
+}

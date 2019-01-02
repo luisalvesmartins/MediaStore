@@ -1,5 +1,5 @@
-﻿var imageBaseUrl= "https://lamfamily.blob.core.windows.net/";
-var functionAppBaseUrl = 'https://lammediafunctions.azurewebsites.net/';
+﻿var imageBaseUrl= "https://yourblob.blob.core.windows.net/";
+var functionAppBaseUrl = 'https://yourfunctions.azurewebsites.net/';
 //functionAppBaseUrl="http://localhost:7071/";
 
 var URL = {
@@ -30,11 +30,6 @@ var URL = {
     getMediaInfo: functionAppBaseUrl + "api/getMediaInfo?id=",
     getAllTagValues: functionAppBaseUrl + "api/getAllTagValues",
 
-
-    IsAuthenticated: `${functionAppBaseUrl}api/IsAuthenticated`,
-    GetClaims: `${functionAppBaseUrl}api/GetClaims`,
-    GetAuthInfo: `${functionAppBaseUrl}api/GetAuthInfo`,
-    GetEmailClaim: `${functionAppBaseUrl}api/GetEmailClaim`,
     AuthMe: `${functionAppBaseUrl}.auth/me`,
     AuthLogout: `${functionAppBaseUrl}.auth/logout`,
 
