@@ -1,0 +1,44 @@
+<Page class="page" navigatingTo="onNavigatingTo"
+    xmlns:lv="nativescript-ui-listview"
+    xmlns="http://schemas.nativescript.org/tns.xsd" >
+
+    <ActionBar class="action-bar">
+        <!-- Should remove the navigation button -->
+        <NavigationButton ios:visibility="collapsed" />
+        <Label class="action-bar-title" text="Folders" horizontalAlignment="center" />
+
+		<ActionItem tap="onEnterKey" ios.position="right" android.position="right">
+            <Label text="Enter Key" verticalAlignment="center" class="action-item" />
+        </ActionItem>
+    </ActionBar>
+
+    <GridLayout rows="*" xmlns:lv="nativescript-ui-listview" xmlns:f="nativescript-fresco" height="100%">
+		<lv:RadListView id="list-view" row="0" items="{{ groups }}" marginRight="-2" itemTap="onGroupTap">
+			<lv:RadListView.listViewLayout>
+				<lv:ListViewGridLayout scrollDirection="Vertical" itemHeight="200" spanCount="1" />
+			</lv:RadListView.listViewLayout>
+			<lv:RadListView.itemTemplate>
+				<GridLayout rows="*" backgroundColor="White">
+					<GridLayout rows="*" columns="*" margin="1 0 0 0">
+						<ios>
+							<Image src="{{ imageSrc }}" stretch="aspectFill" />
+						</ios>
+						<android>
+							<f:FrescoDrawee horizontalAlignment="stretch" height="180" imageUri="{{ imageSrc }}" />
+						</android>
+						<GridLayout verticalAlignment="bottom">
+							<StackLayout paddingTop="8" paddingBottom="8" paddingLeft="16" paddingRight="16" backgroundColor="black" color="white" opacity="0.4">
+								<GridLayout rows="auto" columns="*">
+								<Label text="{{ group }}" />
+								<Label text="{{ numMedia }}" horizontalAlignment="right"/>
+								</GridLayout>
+							</StackLayout>
+						</GridLayout>
+					</GridLayout>
+				</GridLayout>
+			</lv:RadListView.itemTemplate>
+		</lv:RadListView>
+
+        <ActivityIndicator busy="{{ isLoading }}" />
+	</GridLayout>
+</Page>

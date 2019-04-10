@@ -1,0 +1,13 @@
+<Page class="page" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="onNavigatingTo" >
+    
+    <ActionBar class="action-bar">
+        <NavigationButton tap="onBackButtonTap" android.systemIcon="ic_menu_back" />
+        <Label class="action-bar-title" text="Photo" horizontalAlignment="center" />
+    </ActionBar>
+
+
+    <GridLayout rows="*" xmlns:lv="nativescript-ui-listview" xmlns:f="nativescript-fresco" height="100%">
+        <WebView #myWebView [src]="webViewSrc"></WebView>
+	</GridLayout>
+
+</Page>

@@ -5,6 +5,7 @@ The main project is divided in four components:
 - [PhotoUploader](./PhotoUploader) - Crawls and uploads all the media files it finds - not just photos.
 - [Azure Functions](./Functions) - will process the media files uploaded and will build smart thumbnails using cognitive services.
 - [Site](./MediaStoreSite) - Site to browse the uploaded media and to manage media, tags and permissions.
+- [NativeScript app](./nativescriptmediabrowser) - Tested only on iOS, should also work on Android
 
 ## PhotoUploader
 

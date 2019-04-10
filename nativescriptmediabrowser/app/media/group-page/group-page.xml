@@ -1,0 +1,40 @@
+<Page class="page" xmlns="http://schemas.nativescript.org/tns.xsd" navigatingTo="onNavigatingTo" >
+    
+    <ActionBar class="action-bar">
+        <NavigationButton tap="onBackButtonTap" android.systemIcon="ic_menu_back"  visibility="{{ showDetails ? 'visible' : 'collapsed' }}"/>
+        <Label class="action-bar-title" text="{{directory}}" horizontalAlignment="center" />
+		
+        <ActionItem tap="onCloseButtonTap" ios.position="right" android.position="right" visibility="{{ showDetails ? 'collapsed' : 'visible' }}">
+            <Label text="Close" verticalAlignment="center" class="action-item" />
+        </ActionItem>
+    </ActionBar>
+
+
+    <GridLayout rows="*" xmlns:lv="nativescript-ui-listview" xmlns:f="nativescript-fresco" height="100%">
+		<lv:RadListView id="listview" row="1" items="{{ photos }}" marginRight="-2" itemTap="onPhotoTap" visibility="{{ showDetails ? 'visible' : 'collapsed' }}">
+			<lv:RadListView.listViewLayout>
+				<lv:ListViewGridLayout scrollDirection="Vertical" itemHeight="200" spanCount="2" />
+			</lv:RadListView.listViewLayout>
+			<lv:RadListView.itemTemplate>
+				<GridLayout rows="*" backgroundColor="White">
+					<GridLayout rows="*" columns="*" margin="1 0 1 0">
+						<ios>
+							<Image src="{{ imageSrc }}" stretch="aspectFill" />
+						</ios>
+						<android>
+							<f:FrescoDrawee horizontalAlignment="stretch" height="180" imageUri="{{ imageSrc }}" />
+						</android>
+						<GridLayout verticalAlignment="bottom">
+							<StackLayout paddingTop="8" paddingBottom="8" paddingLeft="16" paddingRight="16" opacity="0.5" backgroundColor="black" color="white">
+								<Label text="{{ time }}" fontSize="12"/>
+							</StackLayout>
+						</GridLayout>
+					</GridLayout>
+				</GridLayout>
+			</lv:RadListView.itemTemplate>
+		</lv:RadListView>
+        <ActivityIndicator busy="{{ isLoading }}" />
+		<WebView id="myWebView" src="{{weburl}}" visibility="{{ showDetails ? 'collapsed' : 'visible' }}"></WebView>
+	</GridLayout>
+
+</Page>
